@@ -1,0 +1,22 @@
+name: Deploy ArtShare
+
+on:
+  push:
+    branches:
+      - main  # ou master, selon votre branche principale
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Replace Firebase API Key
+        run: |
+          find . -type f -name "*.html" -exec sed -i "s/{{FIREBASE_API_KEY}}/${{ secrets.FIREBASE_API_KEY }}/g" {} \;
+
+      # Ajoutez ici vos autres étapes de déploiement, comme:
+      # - Déployer sur GitHub Pages
+      # - Ou Firebase Hosting
+      # - Ou tout autre service d'hébergement
