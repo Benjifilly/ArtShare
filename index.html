@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtShare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">    <style>
+        :root {
+            /* Thème clair (défaut) */
+            --bg-color: #e0e7ff; /* Lighter blue background */
+            --container-bg: #ffffff;
+            --text-color: #374151;
+            --heading-color: #7e22ce; /* Purple 700 */
+            --tool-bg: #e5e7eb;
+            --tool-active-bg: #9333ea; /* Purple 600 */
+            --tool-active-text: #ffffff;
+            --canvas-border: #a78bfa;
+            --inputs-bg: #cbd5e0;
+            --button-hover: #7e22ce;
+            --publish-btn-bg: #16a34a; /* Green 600 */
+            --publish-btn-hover: #15803d; /* Green 700 */
+            --modal-bg: #ffffff;
+            --modal-text: #1f2937;
+            --toolbar-bg: #f3e8ff; /* Purple 50 */
+        }
+
+        [data-theme="dark"] {
+            /* Thème sombre */
+            --bg-color: #111827; /* Gray 900 */
+            --container-bg: #1f2937; /* Gray 800 */
+            --text-color: #e5e7eb; /* Gray 200 */
+            --heading-color: #c4b5fd; /* Purple 300 */
+            --tool-bg: #374151; /* Gray 700 */
+            --tool-active-bg: #8b5cf6; /* Purple 500 */
+            --tool-active-text: #ffffff;
+            --canvas-border: #8b5cf6; /* Purple 500 */
+            --inputs-bg: #4b5563; /* Gray 600 */
+            --button-hover: #8b5cf6; /* Purple 500 */
+            --publish-btn-bg: #059669; /* Green 600 */
+            --publish-btn-hover: #047857; /* Green 700 */
+            --modal-bg: #374151; /* Gray 700 */
+            --modal-text: #f3f4f6; /* Gray 100 */
+            --toolbar-bg: #312e81; /* Indigo 900 */
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }        .container {
+            background-color: var(--container-bg);
+            border-radius: 1.5rem; /* Rounded corners */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* Stronger shadow */
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        canvas {
+            border: 2px solid var(--canvas-border); /* Purple border */
+            background-color: #ffffff;
+            touch-action: none; /* Prevent scrolling on touch */
+            border-radius: 0.75rem; /* Rounded corners for canvas */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06); /* Inner shadow */
+            cursor: crosshair; /* Default cursor */
+        }
+        .tool-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition-property: all;
+            transition-duration: 200ms;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--tool-bg);
+            color: var(--text-color);
+        }        .tool-button.active {
+            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+            --tw-ring-color: rgba(216, 180, 254, 0.5);
+            background-color: var(--tool-active-bg);
+            color: var(--tool-active-text);
+        }        /* Custom range slider styling */
+        input[type="range"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: var(--inputs-bg); /* Light gray track */
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--tool-active-bg); /* Utilise la couleur du thème */
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--tool-active-bg);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+          /* Style personnalisé pour les sélecteurs de couleur */
+        .color-picker-wrapper {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--canvas-border);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .color-input {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 150%;
+            height: 150%;
+            transform: translate(-17%, -17%);
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+        }
+        
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid var(--canvas-border);
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+        }
+        
+        input[type="color"]::-moz-color-swatch {
+            border: 2px solid var(--canvas-border);
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+        }
+        /* Modal styling */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Darker overlay */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--modal-bg);
+            margin: auto;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25), 0 6px 6px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+        }        .close-button {
+            color: var(--text-color);
+            opacity: 0.7;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--text-color);
+            opacity: 1;
+            text-decoration: none;
+            cursor: pointer;
+        }        /* Loading Spinner */        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--tool-active-bg); /* Spinner utilisant la couleur du thème */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        [data-theme="dark"] .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--tool-active-bg);
+        }
+        
+        /* Style pour le hover du bouton de publication */
+        #publishBtn:hover {
+            background-color: var(--publish-btn-hover) !important;
+        }        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Boutons de publication et hover states */
+        #publishBtn {
+            background-color: var(--publish-btn-bg);
+            transition: background-color 0.3s ease;
+        }
+        
+        #publishBtn:hover:not([disabled]) {
+            background-color: var(--publish-btn-hover);
+        }
+        
+        #messageModalConfirmBtn {
+            background-color: var(--tool-active-bg);
+            transition: background-color 0.3s ease;
+        }
+        
+        #messageModalConfirmBtn:hover {
+            background-color: var(--button-hover);
+        }
+        
+        /* Eraser Cursor - utiliser une classe pour le thème sombre */
+        .eraser-cursor {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="rgba(0,0,0,0.7)" stroke-width="2" fill="none"/></svg>') 12 12, auto;
+        }
+        
+        [data-theme="dark"] .eraser-cursor {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none"/></svg>') 12 12, auto;
+        }
+        
+        /* iOS Safari compatibility */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                /* Prévenir les comportements inattendus sur iOS */
+                -webkit-text-size-adjust: 100%;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            canvas {
+                /* Assurer que le canvas fonctionne correctement sur iOS */
+                max-width: 100%;
+                touch-action: none;
+            }            /* Améliorer le rendu des inputs sur iOS */
+            input[type="color"] {
+                -webkit-appearance: none;
+                appearance: none;
+                height: 44px; /* taille minimum recommandée pour les éléments tactiles iOS */
+                width: 44px;
+                border-radius: 50%;
+                overflow: hidden;
+            }
+            
+            input[type="color"]::-webkit-color-swatch-wrapper {
+                padding: 0;
+            }
+            
+            input[type="color"]::-webkit-color-swatch {
+                border: none;
+            }
+            
+            /* Améliorer les boutons pour iOS */
+            button {
+                -webkit-appearance: none;
+                appearance: none;
+                touch-action: manipulation; /* optimisation pour le tactile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center">
+            <div class="flex justify-end mb-2">
+                <button id="themeToggleBtn" class="px-3 py-1 rounded-full text-sm font-medium flex items-center transition-colors duration-200" style="background-color: var(--tool-bg); color: var(--text-color); width: auto;">
+                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <span id="themeText">Mode sombre</span>
+                </button>
+            </div>            <h1 class="text-5xl font-extrabold mb-4 tracking-tight" style="color: var(--heading-color)">ArtShare</h1>
+            <p class="text-lg" style="color: var(--text-color)">Exprimez votre créativité et partagez vos œuvres !</p>
+            <p class="text-sm mt-2" style="color: var(--text-color)">Votre ID utilisateur: <span id="userIdDisplay" class="font-semibold" style="color: var(--tool-active-bg)">Chargement...</span></p>
+        </header>
+
+        <nav class="flex justify-center space-x-4 mb-8">
+            <button id="drawTab" class="px-6 py-3 rounded-full text-lg font-semibold bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition-all duration-300 transform hover:scale-105">
+                Dessiner
+            </button>
+            <button id="galleryTab" class="px-6 py-3 rounded-full text-lg font-semibold bg-gray-200 text-gray-700 shadow-md hover:bg-gray-300 transition-all duration-300 transform hover:scale-105">
+                Galerie
+            </button>
+        </nav>
+
+        <section id="drawingSection" class="w-full flex flex-col items-center gap-6">
+            <div class="flex flex-wrap justify-center items-center gap-4 p-4 rounded-xl shadow-inner w-full max-w-4xl" style="background-color: var(--toolbar-bg);">                <div class="flex flex-col items-center">
+                    <label for="colorPicker" class="text-sm font-medium text-gray-700 mb-1">Couleur</label>
+                    <div class="color-picker-wrapper flex items-center justify-center">
+                        <input type="color" id="colorPicker" value="#000000" class="color-input">
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center w-32">
+                    <label for="strokeSize" class="text-sm font-medium text-gray-700 mb-1">Taille du trait: <span id="strokeSizeValue">5</span></label>
+                    <input type="range" id="strokeSize" min="1" max="50" value="5" class="w-full">
+                </div>                <div class="flex flex-col items-center">
+                    <label for="bgColorPicker" class="text-sm font-medium text-gray-700 mb-1">Fond</label>
+                    <div class="color-picker-wrapper flex items-center justify-center">
+                        <input type="color" id="bgColorPicker" value="#ffffff" class="color-input">
+                    </div>
+                </div>
+
+                <button id="penBtn" class="tool-button active">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span class="ml-2 hidden sm:inline">Stylo</span>
+                </button>
+
+                <button id="eraserBtn" class="tool-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span class="ml-2 hidden sm:inline">Gomme</span>
+                </button>
+
+                <button id="lineBtn" class="tool-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l7-7 7 7" />
+                    </svg>
+                    <span class="ml-2 hidden sm:inline">Ligne</span>
+                </button>
+
+                <button id="rectBtn" class="tool-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
+                    </svg>
+                    <span class="ml-2 hidden sm:inline">Rectangle</span>
+                </button>
+
+                <button id="clearBtn" class="tool-button bg-red-500 text-white hover:bg-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7.586a2 2 0 00-.586-1.414L12 3M3 12h.01M12 3h.01" />
+                    </svg>
+                    <span class="ml-2 hidden sm:inline">Effacer</span>
+                </button>
+            </div>
+
+            <canvas id="drawingCanvas" class="w-full max-w-4xl h-[400px] sm:h-[500px] lg:h-[600px]"></canvas>            <button id="publishBtn" class="px-8 py-4 rounded-full text-xl font-bold text-white shadow-lg transition-all duration-300 transform hover:scale-105" style="background-color: var(--publish-btn-bg);" disabled>
+                Publier mon dessin
+            </button>
+        </section>
+
+        <section id="gallerySection" class="hidden w-full">
+            <h2 class="text-3xl font-bold text-center mb-8" style="color: var(--heading-color)">Galerie Publique</h2>
+            <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div id="galleryLoading" class="col-span-full flex justify-center items-center p-8">
+                    <div class="spinner"></div>
+                    <p class="ml-4" style="color: var(--text-color)">Chargement des dessins...</p>
+                </div>
+                <p id="noDrawingsMessage" class="hidden col-span-full text-center" style="color: var(--text-color)">Aucun dessin publié pour le moment. Soyez le premier !</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="usernameModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalBtn">&times;</span>            <h3 class="text-2xl font-bold mb-6" style="color: var(--text-color)">Quel est votre pseudo ?</h3>
+            <input type="text" id="usernameInput" placeholder="Entrez votre pseudo" class="w-full p-3 border rounded-lg mb-6 text-lg" style="color: var(--text-color); background-color: var(--container-bg); border-color: var(--inputs-bg);">            <button id="submitUsernameBtn" class="px-6 py-3 rounded-full text-lg font-semibold text-white shadow-md transition-all duration-300" style="background-color: var(--tool-active-bg);">
+                Confirmer
+            </button>
+            <p id="usernameError" class="text-red-500 text-sm mt-2 hidden">Veuillez entrer un pseudo.</p>
+        </div>
+    </div>
+
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeMessageModalBtn">&times;</span>            <h3 id="messageModalTitle" class="text-2xl font-bold mb-4" style="color: var(--text-color)"></h3>
+            <p id="messageModalBody" class="mb-6" style="color: var(--text-color)"></p>            <button id="messageModalConfirmBtn" class="px-6 py-3 rounded-full text-lg font-semibold text-white shadow-md transition-all duration-300 hidden" style="background-color: var(--tool-active-bg);">
+                OK
+            </button>
+            <button id="messageModalCancelBtn" class="px-6 py-3 rounded-full text-lg font-semibold shadow-md transition-all duration-300 ml-4 hidden" style="background-color: var(--inputs-bg); color: var(--text-color);">
+                Annuler
+            </button>
+        </div>
+    </div>
+
+    <script type="module">        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
+
+        // Global variables for Firebase configuration and app ID
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Ensure firebaseConfig is a valid object, even if __firebase_config is empty or undefined        // Configuration Firebase pour l'environnement local
+        const firebaseConfig = {
+            apiKey: "{{FIREBASE_API_KEY}}",
+            authDomain: "ma-cherie-af625.firebaseapp.com",
+            projectId: "ma-cherie-af625",
+            storageBucket: "ma-cherie-af625.firebasestorage.app",
+            messagingSenderId: "405191992200",
+            appId: "1:405191992200:web:8b9eda534715074c75d03d",
+            measurementId: "G-F94RGQPDBT"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase App and Services
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous'; // Default to anonymous
+        let firebaseInitialized = false; // Flag to track Firebase initialization status        // DOM Elements
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const colorPicker = document.getElementById('colorPicker');
+        const strokeSizeInput = document.getElementById('strokeSize');
+        const strokeSizeValueSpan = document.getElementById('strokeSizeValue');
+        const bgColorPicker = document.getElementById('bgColorPicker'); // New background color picker
+        const eraserBtn = document.getElementById('eraserBtn');
+        const penBtn = document.getElementById('penBtn');
+        const lineBtn = document.getElementById('lineBtn'); // New line tool button
+        const rectBtn = document.getElementById('rectBtn'); // New rectangle tool button
+        const clearBtn = document.getElementById('clearBtn');
+        const publishBtn = document.getElementById('publishBtn');
+        const drawTab = document.getElementById('drawTab');
+        const galleryTab = document.getElementById('galleryTab');
+        const drawingSection = document.getElementById('drawingSection');
+        const gallerySection = document.getElementById('gallerySection');
+        const galleryGrid = document.getElementById('galleryGrid');
+        const galleryLoading = document.getElementById('galleryLoading');
+        const noDrawingsMessage = document.getElementById('noDrawingsMessage');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // Modal Elements
+        const usernameModal = document.getElementById('usernameModal');
+        const usernameInput = document.getElementById('usernameInput');
+        const submitUsernameBtn = document.getElementById('submitUsernameBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const usernameError = document.getElementById('usernameError');
+
+        const messageModal = document.getElementById('messageModal');
+        const messageModalTitle = document.getElementById('messageModalTitle');
+        const messageModalBody = document.getElementById('messageModalBody');
+        const messageModalConfirmBtn = document.getElementById('messageModalConfirmBtn');
+        const messageModalCancelBtn = document.getElementById('messageModalCancelBtn');
+        const closeMessageModalBtn = document.getElementById('closeMessageModalBtn');
+
+        // Drawing state variables
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let startX = 0; // For shapes
+        let startY = 0; // For shapes
+        let currentColor = '#000000';
+        let currentStrokeSize = 5;
+        let currentBgColor = '#ffffff'; // Initial background color
+        let currentTool = 'pen'; // 'pen', 'eraser', 'line', 'rectangle'
+        let savedCanvasState; // To save canvas state for shape previews
+
+        // Function to show custom message modal
+        function showMessageModal(title, body, isConfirm = false, onConfirm = null, onCancel = null) {
+            messageModalTitle.textContent = title;
+            messageModalBody.textContent = body;
+            messageModalConfirmBtn.classList.add('hidden');
+            messageModalCancelBtn.classList.add('hidden');
+
+            if (isConfirm) {
+                messageModalConfirmBtn.classList.remove('hidden');
+                messageModalCancelBtn.classList.remove('hidden');
+                messageModalConfirmBtn.onclick = () => {
+                    messageModal.style.display = 'none';
+                    if (onConfirm) onConfirm();
+                };
+                messageModalCancelBtn.onclick = () => {
+                    messageModal.style.display = 'none';
+                    if (onCancel) onCancel();
+                };
+            } else {
+                // For simple alerts, just show OK button
+                messageModalConfirmBtn.classList.remove('hidden');
+                messageModalConfirmBtn.textContent = 'OK';
+                messageModalConfirmBtn.onclick = () => {
+                    messageModal.style.display = 'none';
+                };
+            }
+            messageModal.style.display = 'flex';
+        }
+
+        // Close message modal when clicking 'x'
+        closeMessageModalBtn.onclick = () => {
+            messageModal.style.display = 'none';
+        };
+
+        // Initialize Firebase
+        const initializeFirebase = async () => {
+            try {
+                // Check if projectId is provided
+                if (!firebaseConfig.projectId || firebaseConfig.projectId === "YOUR_PROJECT_ID") {
+                    console.error("Firebase Error: 'projectId' not provided in firebaseConfig. Please ensure __firebase_config is correctly set in the environment.");
+                    userIdDisplay.textContent = "Erreur de configuration Firebase";
+                    showMessageModal("Erreur de configuration", "Le projectId Firebase n'est pas configuré. Veuillez contacter l'administrateur.");
+                    return;
+                }                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                const analytics = getAnalytics(app); // Initialisation de Firebase Analytics
+                firebaseInitialized = true; // Set flag to true
+
+                // Listen for auth state changes
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        console.log("Firebase Authenticated. User ID:", userId);
+                        publishBtn.disabled = false; // Enable publish button once authenticated
+                        // Once authenticated, load drawings
+                        loadDrawings();
+                    } else {
+                        // Sign in anonymously if no user is logged in
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                            console.log("Firebase signed in (anonymously or with custom token).");
+                        } catch (error) {
+                            console.error("Error signing in:", error);
+                            userIdDisplay.textContent = "Erreur d'authentification";
+                            showMessageModal("Erreur d'authentification", "Impossible de se connecter à Firebase. Veuillez réessayer plus tard.");
+                            publishBtn.disabled = true; // Keep publish button disabled on auth error
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                userIdDisplay.textContent = "Erreur d'initialisation";
+                showMessageModal("Erreur d'initialisation", "Impossible d'initialiser Firebase. Vérifiez votre configuration.");
+                publishBtn.disabled = true; // Keep publish button disabled on init error
+            }
+        };
+
+        // Canvas setup and resizing
+        const resizeCanvas = () => {
+            const rect = canvas.getBoundingClientRect();
+            // Store current canvas content
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            // Restore content after resize
+            ctx.putImageData(imageData, 0, 0);
+
+            // Set drawing properties for the new size
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentStrokeSize;
+            // Ensure background is re-applied if canvas was cleared by resize
+            ctx.fillStyle = currentBgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        };
+
+        // Initial canvas setup
+        window.addEventListener('load', () => {
+            resizeCanvas(); // Set initial size
+            ctx.fillStyle = currentBgColor; // Set initial background
+            ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill canvas with initial background
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentStrokeSize;
+            initializeFirebase(); // Initialize Firebase after canvas is ready
+        });
+        window.addEventListener('resize', resizeCanvas); // Resize canvas on window resize
+
+        // Get mouse/touch position relative to canvas
+        function getEventPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            const pos = getEventPos(e);
+            [lastX, lastY] = [pos.x, pos.y];
+            [startX, startY] = [pos.x, pos.y]; // Save start for shapes
+
+            if (currentTool !== 'pen' && currentTool !== 'eraser') {
+                // Save the current canvas state before drawing a preview shape
+                savedCanvasState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); // Prevent scrolling on touch devices
+            const pos = getEventPos(e);
+
+            ctx.lineWidth = currentStrokeSize; // Ensure line width is always updated
+
+            if (currentTool === 'pen' || currentTool === 'eraser') {
+                ctx.strokeStyle = currentTool === 'eraser' ? currentBgColor : currentColor; // Eraser uses background color
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            } else if (currentTool === 'line') {
+                // Restore canvas state to draw a fresh preview
+                if (savedCanvasState) {
+                    ctx.putImageData(savedCanvasState, 0, 0);
+                }
+                ctx.strokeStyle = currentColor;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            } else if (currentTool === 'rectangle') {
+                // Restore canvas state to draw a fresh preview
+                if (savedCanvasState) {
+                    ctx.putImageData(savedCanvasState, 0, 0);
+                }
+                ctx.strokeStyle = currentColor;
+                ctx.beginPath();
+                ctx.rect(startX, startY, pos.x - startX, pos.y - startY);
+                ctx.stroke();
+            }
+
+            [lastX, lastY] = [pos.x, pos.y];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            // For shapes, draw the final shape after mouse up
+            if (currentTool !== 'pen' && currentTool !== 'eraser' && savedCanvasState) {
+                ctx.putImageData(savedCanvasState, 0, 0); // Restore to clear preview
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentStrokeSize; // Ensure line width is applied for final shape
+
+                if (currentTool === 'line') {
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(lastX, lastY);
+                    ctx.stroke();
+                } else if (currentTool === 'rectangle') {
+                    ctx.beginPath();
+                    ctx.rect(startX, startY, lastX - startX, lastY - startY);
+                    ctx.stroke();
+                }
+                savedCanvasState = null; // Clear saved state
+            }
+        }
+
+        // Event Listeners for Drawing
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing); // Stop drawing if mouse leaves canvas
+
+        // Touch events for drawing
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing);
+
+        // Helper to set active tool button
+        function setActiveToolButton(toolName) {
+            const buttons = [penBtn, eraserBtn, lineBtn, rectBtn];
+            buttons.forEach(button => {
+                if (button.id === `${toolName}Btn`) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+            // Update canvas cursor based on tool
+            if (toolName === 'eraser') {
+                canvas.classList.add('eraser-cursor');
+            } else {
+                canvas.classList.remove('eraser-cursor');
+            }
+            canvas.style.cursor = (toolName === 'pen' || toolName === 'eraser') ? 'crosshair' : 'default';
+        }
+
+
+        // Tool controls
+        colorPicker.addEventListener('input', (e) => {
+            currentColor = e.target.value;
+            if (currentTool !== 'eraser') { // Only change stroke color if not in eraser mode
+                ctx.strokeStyle = currentColor;
+            }
+            setActiveToolButton(currentTool); // Re-apply active style in case tool changed
+        });
+
+        strokeSizeInput.addEventListener('input', (e) => {
+            currentStrokeSize = parseInt(e.target.value);
+            strokeSizeValueSpan.textContent = currentStrokeSize;
+            ctx.lineWidth = currentStrokeSize;
+            // Update eraser cursor size dynamically (CSS cursor doesn't support this directly,
+            // so we'll just update the visual circle in the CSS definition if we were to generate it dynamically)
+            // For now, the CSS cursor will be fixed size.
+            // A more advanced solution would be to draw a temporary circle on canvas during mousemove.
+        });
+
+        bgColorPicker.addEventListener('input', (e) => {
+            currentBgColor = e.target.value;
+            // Clear canvas and fill with new background
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = currentBgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // If eraser is active, update its strokeStyle to match new background
+            if (currentTool === 'eraser') {
+                ctx.strokeStyle = currentBgColor;
+            }
+        });
+
+        penBtn.addEventListener('click', () => {
+            currentTool = 'pen';
+            ctx.strokeStyle = currentColor;
+            setActiveToolButton('pen');
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            currentTool = 'eraser';
+            ctx.strokeStyle = currentBgColor; // Eraser uses background color
+            setActiveToolButton('eraser');
+        });
+
+        lineBtn.addEventListener('click', () => {
+            currentTool = 'line';
+            ctx.strokeStyle = currentColor;
+            setActiveToolButton('line');
+        });
+
+        rectBtn.addEventListener('click', () => {
+            currentTool = 'rectangle';
+            ctx.strokeStyle = currentColor;
+            setActiveToolButton('rectangle');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            showMessageModal(
+                "Effacer le dessin",
+                "Êtes-vous sûr de vouloir effacer tout le dessin ? Cette action est irréversible.",
+                true,
+                () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = currentBgColor; // Re-fill with current background color
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            );
+        });
+
+        // Publish Drawing
+        publishBtn.addEventListener('click', () => {
+            if (!firebaseInitialized || !db) {
+                showMessageModal("Erreur", "Le service de publication n'est pas encore prêt. Veuillez patienter.");
+                return;
+            }
+            usernameModal.style.display = 'flex'; // Show the modal
+            usernameInput.value = localStorage.getItem('artshareUsername') || ''; // Pre-fill if exists
+            usernameInput.focus();
+        });
+
+        submitUsernameBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                usernameError.classList.remove('hidden');
+                return;
+            }
+            usernameError.classList.add('hidden');
+
+            localStorage.setItem('artshareUsername', username); // Save username locally
+
+            usernameModal.style.display = 'none'; // Hide the modal
+
+            // Convert canvas to base64 image
+            const drawingData = canvas.toDataURL('image/png');
+
+            try {
+                // Ensure db is initialized before trying to add a document
+                if (!db) {
+                    showMessageModal("Erreur", "La base de données n'est pas initialisée. Veuillez réessayer.");
+                    console.error("Firestore DB is not initialized.");
+                    return;
+                }
+
+                // Add drawing to Firestore
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'drawings'), {
+                    drawingData: drawingData,
+                    username: username,
+                    timestamp: serverTimestamp(), // Use server timestamp
+                    userId: userId // Store the user ID
+                });
+                showMessageModal("Succès !", "Votre dessin a été publié avec succès !");
+                console.log("Dessin publié avec succès !");
+                // Optionally switch to gallery view after publishing
+                showGallery();
+            } catch (e) {
+                console.error("Erreur lors de la publication du dessin : ", e);
+                showMessageModal("Erreur", "Impossible de publier le dessin. " + e.message);
+            }
+        });
+
+        // Close username modal
+        closeModalBtn.onclick = () => {
+            usernameModal.style.display = 'none';
+            usernameError.classList.add('hidden'); // Hide error if modal closed
+        };
+        window.onclick = (event) => {
+            if (event.target == usernameModal) {
+                usernameModal.style.display = 'none';
+                usernameError.classList.add('hidden');
+            }
+            if (event.target == messageModal) {
+                messageModal.style.display = 'none';
+            }
+        };
+
+        // Navigation
+        function showDrawing() {
+            drawingSection.classList.remove('hidden');
+            gallerySection.classList.add('hidden');
+            drawTab.classList.add('bg-purple-600', 'text-white');
+            drawTab.classList.remove('bg-gray-200', 'text-gray-700');
+            galleryTab.classList.remove('bg-purple-600', 'text-white');
+            galleryTab.classList.add('bg-gray-200', 'text-gray-700');
+        }
+
+        function showGallery() {
+            drawingSection.classList.add('hidden');
+            gallerySection.classList.remove('hidden');
+            galleryTab.classList.add('bg-purple-600', 'text-white');
+            galleryTab.classList.remove('bg-gray-200', 'text-gray-700');
+            drawTab.classList.remove('bg-purple-600', 'text-white');
+            drawTab.classList.add('bg-gray-200', 'text-gray-700');
+        }
+
+        drawTab.addEventListener('click', showDrawing);
+        galleryTab.addEventListener('click', showGallery);
+
+        // Load Drawings for Gallery
+        let unsubscribeFromDrawings = null; // To store the unsubscribe function
+
+        function loadDrawings() {
+            if (!db) {
+                console.warn("Firestore est en cours d'initialisation ou a échoué. Impossible de charger les dessins.");
+                galleryLoading.classList.add('hidden');
+                noDrawingsMessage.classList.remove('hidden');
+                noDrawingsMessage.textContent = "Impossible de charger les dessins : Firebase non initialisé.";
+                return;
+            }
+
+            // Unsubscribe from previous listener if exists
+            if (unsubscribeFromDrawings) {
+                unsubscribeFromDrawings();
+            }
+
+            galleryLoading.classList.remove('hidden');
+            noDrawingsMessage.classList.add('hidden');
+            galleryGrid.innerHTML = ''; // Clear existing drawings
+
+            const drawingsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'drawings');
+            const q = query(drawingsCollectionRef, orderBy('timestamp', 'desc'));
+
+            unsubscribeFromDrawings = onSnapshot(q, (snapshot) => {
+                galleryLoading.classList.add('hidden');
+                galleryGrid.innerHTML = ''; // Clear previous content before re-rendering
+
+                if (snapshot.empty) {
+                    noDrawingsMessage.classList.remove('hidden');
+                    return;
+                } else {
+                    noDrawingsMessage.classList.add('hidden');
+                }                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const drawingDiv = document.createElement('div');
+                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    drawingDiv.className = 'rounded-xl shadow-lg overflow-hidden flex flex-col items-center p-4 transform transition-transform duration-300 hover:scale-105';
+                    drawingDiv.style.backgroundColor = isDark ? 'var(--container-bg)' : '#ffffff';
+
+                    const img = document.createElement('img');
+                    img.src = data.drawingData;
+                    img.alt = `Dessin par ${data.username}`;
+                    img.className = 'w-full h-48 object-contain rounded-md mb-3';
+                    img.style.border = isDark ? '1px solid var(--inputs-bg)' : '1px solid #e5e7eb';
+                    img.onerror = (e) => {
+                        console.error('Image loading error:', e);
+                        img.src = `https://placehold.co/200x150/e0e0e0/555555?text=Image+non+disponible`; // Placeholder on error
+                    };
+
+                    const usernameP = document.createElement('p');
+                    usernameP.className = 'text-md font-semibold mt-2';
+                    usernameP.style.color = isDark ? 'var(--text-color)' : '#1f2937';
+                    usernameP.textContent = data.username;                    const dateP = document.createElement('p');
+                    dateP.className = 'text-sm';
+                    dateP.style.color = isDark ? 'var(--text-color)' : '#6b7280'; // Gray 500
+                    dateP.style.opacity = isDark ? '0.7' : '1';
+                    // Convert Firebase Timestamp to Date object
+                    const date = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
+                    dateP.textContent = date.toLocaleString('fr-FR', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+
+                    drawingDiv.appendChild(img);
+                    drawingDiv.appendChild(usernameP);
+                    drawingDiv.appendChild(dateP);                    galleryGrid.appendChild(drawingDiv);
+                });
+                
+                // Appliquer le thème actuel aux nouveaux éléments de la galerie
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                updateUIForTheme(isDark);
+            }, (error) => {
+                console.error("Error fetching drawings: ", error);
+                galleryLoading.classList.add('hidden');
+                noDrawingsMessage.classList.remove('hidden');
+                noDrawingsMessage.textContent = "Erreur lors du chargement des dessins. Veuillez réessayer.";
+                showMessageModal("Erreur de chargement", "Impossible de charger les dessins depuis la galerie. " + error.message);
+            });
+        }        // Set initial active tool
+        setActiveToolButton(currentTool);        // Gestion du thème (clair/sombre)
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        const themeText = document.getElementById('themeText');
+        
+        // Fonction pour mettre à jour l'interface utilisateur en fonction du thème
+        function updateUIForTheme(isDark) {
+            // Mettre à jour les éléments de la galerie
+            document.querySelectorAll('#galleryGrid > div').forEach(div => {
+                div.style.backgroundColor = isDark ? 'var(--container-bg)' : '#ffffff';
+                
+                // Mettre à jour les images
+                const img = div.querySelector('img');
+                if (img) {
+                    img.style.border = isDark ? '1px solid var(--inputs-bg)' : '1px solid #e5e7eb';
+                }
+                
+                // Mettre à jour les textes
+                const usernameP = div.querySelector('p.text-md');
+                if (usernameP) {
+                    usernameP.style.color = isDark ? 'var(--text-color)' : '#1f2937';
+                }
+                
+                const dateP = div.querySelector('p.text-sm');
+                if (dateP) {
+                    dateP.style.color = isDark ? 'var(--text-color)' : '#6b7280';
+                    dateP.style.opacity = isDark ? '0.7' : '1';
+                }
+            });
+            
+            // Mettre à jour les boutons de navigation
+            if (isDark) {
+                if (drawTab.classList.contains('bg-purple-600')) {
+                    drawTab.classList.replace('bg-purple-600', 'bg-purple-900');
+                    drawTab.classList.replace('hover:bg-purple-700', 'hover:bg-purple-800');
+                }
+                
+                if (galleryTab.classList.contains('bg-gray-200')) {
+                    galleryTab.classList.replace('bg-gray-200', 'bg-gray-700');
+                    galleryTab.classList.replace('text-gray-700', 'text-gray-200');
+                    galleryTab.classList.replace('hover:bg-gray-300', 'hover:bg-gray-600');
+                }
+            } else {
+                if (drawTab.classList.contains('bg-purple-900')) {
+                    drawTab.classList.replace('bg-purple-900', 'bg-purple-600');
+                    drawTab.classList.replace('hover:bg-purple-800', 'hover:bg-purple-700');
+                }
+                
+                if (galleryTab.classList.contains('bg-gray-700')) {
+                    galleryTab.classList.replace('bg-gray-700', 'bg-gray-200');
+                    galleryTab.classList.replace('text-gray-200', 'text-gray-700');
+                    galleryTab.classList.replace('hover:bg-gray-600', 'hover:bg-gray-300');
+                }
+            }
+            
+            // Mettre à jour les labels des inputs
+            document.querySelectorAll('label').forEach(label => {
+                label.style.color = isDark ? 'var(--text-color)' : '';
+            });
+            
+            // Mettre à jour le bouton de publication
+            if (publishBtn) {
+                publishBtn.style.backgroundColor = 'var(--publish-btn-bg)';
+            }
+            
+            // Mettre à jour les boutons des modals
+            if (messageModalConfirmBtn) {
+                messageModalConfirmBtn.style.backgroundColor = 'var(--tool-active-bg)';
+            }
+            if (messageModalCancelBtn) {
+                messageModalCancelBtn.style.backgroundColor = 'var(--inputs-bg)';
+                messageModalCancelBtn.style.color = 'var(--text-color)';
+            }
+            if (submitUsernameBtn) {
+                submitUsernameBtn.style.backgroundColor = 'var(--tool-active-bg)';
+            }
+            
+            // Mettre à jour les inputs
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                input.style.backgroundColor = 'var(--container-bg)';
+                input.style.color = 'var(--text-color)';
+                input.style.borderColor = 'var(--inputs-bg)';
+            });
+            
+            // Mettre à jour les modals
+            document.querySelectorAll('.modal-content').forEach(modal => {
+                modal.style.backgroundColor = 'var(--modal-bg)';
+                modal.style.color = 'var(--modal-text)';
+            });
+        }
+        
+        // Charger le thème sauvegardé
+        const savedTheme = localStorage.getItem('artshare-theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            moonIcon.classList.remove('hidden');
+            sunIcon.classList.add('hidden');
+            themeText.textContent = 'Mode clair';
+            // Appliquer immédiatement le thème sombre
+            updateUIForTheme(true);
+        }
+        
+        // Basculer entre les thèmes
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const willBeDark = currentTheme !== 'dark';
+            
+            if (currentTheme === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('artshare-theme', 'light');
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+                themeText.textContent = 'Mode sombre';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('artshare-theme', 'dark');
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+                themeText.textContent = 'Mode clair';
+            }
+            
+            // Mettre à jour l'interface pour le nouveau thème
+            updateUIForTheme(willBeDark);
+        });
+    </script>
+</body>
+</html>

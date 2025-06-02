@@ -1,0 +1,48 @@
+/* iOS Safari compatibility */
+@supports (-webkit-touch-callout: none) {
+    body {
+        /* Prévenir les comportements inattendus sur iOS */
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    canvas {
+        /* Assurer que le canvas fonctionne correctement sur iOS */
+        max-width: 100%;
+        touch-action: none;
+    }
+    
+    /* Améliorer le rendu des inputs sur iOS */
+    input[type="color"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 44px; /* taille minimum recommandée pour les éléments tactiles iOS */
+        width: 44px;
+    }
+    
+    input[type="text"], 
+    input[type="email"],
+    input[type="number"],
+    input[type="password"] {
+        -webkit-appearance: none;
+        appearance: none;
+        font-size: 16px; /* évite le zoom sur iOS quand on focus un input */
+    }
+    
+    /* Améliorer les boutons pour iOS */
+    button {
+        -webkit-appearance: none;
+        appearance: none;
+        touch-action: manipulation; /* optimisation pour le tactile */
+    }
+}
+
+/* Dark theme specific styling for iOS */
+[data-theme="dark"] .eraser-cursor {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none"/></svg>') 12 12, auto;
+}
+
+[data-theme="dark"] .spinner {
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--tool-active-bg);
+}
